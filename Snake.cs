@@ -1,5 +1,6 @@
 ﻿namespace SnakeRedux {
     class Snake {        
+<<<<<<< HEAD
 
         struct Board {
             public int width;
@@ -54,6 +55,8 @@
             }
         }
 
+=======
+>>>>>>> dbe4dc86c4d508a1107c9367ac9741db8125d6fe
         static void Main() {
             Console.Clear();
             Console.Title = "slayworldsnake";
@@ -61,13 +64,17 @@
             
             ConsoleKey lastInput;
 
+<<<<<<< HEAD
             Board board = new Board(10, 9);
             Player player = new Player(board);
 
+=======
+>>>>>>> dbe4dc86c4d508a1107c9367ac9741db8125d6fe
             Console.WriteLine("Enter to start...");
             lastInput = Console.ReadKey().Key;
             
             while (lastInput != ConsoleKey.Enter) {
+<<<<<<< HEAD
                 if (lastInput == ConsoleKey.Escape) {
                     Environment.Exit(0);
                 }
@@ -76,12 +83,18 @@
 
             lastInput = ConsoleKey.D;
 
+=======
+                lastInput = Console.ReadKey(true).Key;
+            }
+
+>>>>>>> dbe4dc86c4d508a1107c9367ac9741db8125d6fe
             Thread inputThread = new Thread(delegate ()
             {
                 InputLoop(ref lastInput);
             });
             inputThread.Start();
 
+<<<<<<< HEAD
             GameLoop(ref lastInput, board, player);
         }
 
@@ -156,14 +169,31 @@
 
                 Thread.Sleep(500);
             }
+=======
+
+            
+>>>>>>> dbe4dc86c4d508a1107c9367ac9741db8125d6fe
         }
 
         static void InputLoop(ref ConsoleKey lastInput) {
             while (true) {
+<<<<<<< HEAD
+=======
+                Console.WriteLine(lastInput);
+
+                if (lastInput == ConsoleKey.Enter) {
+                    StartGame();
+                }
+                if (lastInput == ConsoleKey.Escape) {
+                    EndGame();
+                }
+
+>>>>>>> dbe4dc86c4d508a1107c9367ac9741db8125d6fe
                 lastInput = Console.ReadKey(true).Key;
             }
         }
 
+<<<<<<< HEAD
         static void RestartGame(Board board, ref Player player, ref ConsoleKey lastInput) {
             player = new Player(board);
             lastInput = ConsoleKey.D;
@@ -223,3 +253,15 @@
         }
     }
 }
+=======
+        static void StartGame() {
+
+        }
+
+        static void EndGame() {
+            Console.CursorVisible = true;
+            Environment.Exit(0);
+        }
+    }
+}
+>>>>>>> dbe4dc86c4d508a1107c9367ac9741db8125d6fe
