@@ -1,4 +1,6 @@
-﻿namespace SnakeRedux
+﻿using System;
+
+namespace SnakeRedux
 {
     class Snake
     {
@@ -24,28 +26,17 @@
             {
                 x = board.width / 2;
                 y = board.height / 2;
-                length = 1;
+                length = 3;
                 snake = new int[board.width, board.height];
-                for (int i = 0; i > 3; i++)
+                for (int i = 0; i < 3; i++)
                 {
-                    snake[x - i, y] = i + 1; 
+                    snake[x - i, y] = i + 1;
                 }
             }
         }
-        struct Apple
+        struct Apple(Board board)
         {
-            public int count;
-            public int[] x;
-            public int[] y;
-            public bool[,] apples;
-            public Apple(int num, Board board)
-            {
-                Random r = new Random();
-                count = num;
-                x = new int[count];
-                y = new int[count];
-                apples = new bool[board.width, board.height];
-            }
+            public bool[,] apples = new bool[board.width, board.height];
         }
         static void Main()
         {
@@ -59,7 +50,7 @@
 
             Board board = new Board(10, 9);
             Player player = new Player(board);
-            Apple apple = new Apple(3, board);
+            Apple apple = new Apple(board);
 
             Console.WriteLine("Enter to start...");
             lastInput = Console.ReadKey().Key;
@@ -78,7 +69,17 @@
                 InputLoop(ref lastInput, ref extraInput);
             });
             inputThread.Start();
-            GameLoop(board, player, ref lastInput, ref extraInput);
+
+            /*for (int i = 0; i < board.height; i++)
+            {
+                for (int j = 0; j < board.width; j++)
+                {
+                    Console.Write(player.snake[j, i]);
+                }
+                Console.WriteLine();
+            }*/
+            GenerateApple(player, board, ref apple);
+            GameLoop(board, player, apple, ref lastInput, ref extraInput);
         }
         static void GameLoop(Board board, Player player, Apple apple, ref ConsoleKey lastInput, ref ConsoleKey extraInput)
         {
@@ -93,8 +94,9 @@
                 if (player.length == board.width * board.height)
                 {
                     gameWon = true;
-                }
-                Render(board, player);
+                }               
+
+                Render(board, apple, player);
                 switch (extraInput)
                 {
                     case ConsoleKey.Escape:
@@ -106,21 +108,19 @@
                         break;
                 }
                 extraInput = ConsoleKey.None;
-                switch (lastInput)
+
+                if (OnApple(board, ref apple, ref player))
                 {
-                    case ConsoleKey.W:
-                        player.y -= 1;
-                        break;
-                    case ConsoleKey.A:
-                        player.x -= 1;
-                        break;
-                    case ConsoleKey.S:
-                        player.y += 1;
-                        break;
-                    case ConsoleKey.D:
-                        player.x += 1;
-                        break;
+                    CutTail(board, ref player);
+                    MoveSnake(board, lastInput, ref player);
+                    GenerateApple(player, board, ref apple);
                 }
+                else
+                {
+                    CutTail(board, ref player);
+                    MoveSnake(board, lastInput, ref player);
+                }
+
                 if (gameOver)
                 {
                     Console.Clear();
@@ -207,35 +207,83 @@
 
         static bool OnApple(Board board, ref Apple apple, ref Player player)
         {
-            Random r = new();
-            int x, y;
-
             if (apple.apples[player.x, player.y] == true)
             {
                 player.length++;
                 apple.apples[player.x, player.y] = false;
-
-                x = r.Next(0, board.width);
-                y = r.Next(0, board.height);
-                apple.apples[x, y] = true;
 
                 return true;
             }
             return false;
         }
 
-        static void Render(Board board, Player player)
+        static void CutTail(Board board, ref Player player)
         {
-            Console.Clear();
             for (int y = 0; y < board.height; y++)
             {
                 for (int x = 0; x < board.width; x++)
                 {
-                    if (player.x == x && player.y == y)
+                    if (player.snake[x, y] == player.length)
                     {
-                        Console.BackgroundColor = ConsoleColor.Blue;
+                        player.snake[x, y] = 0;
                     }
-                    else if (x % 2 == 0 && y % 2 == 0)
+                }
+            }
+        }
+
+        static void MoveSnake(Board board, ConsoleKey lastInput, ref Player player)
+        {
+            bool headMoved = false;
+
+            for (int y = 0; y < board.height; y++)
+            {
+                for (int x = 0; x < board.width; x++)
+                {
+                    if (player.snake[x, y] != 0 && player.snake[x, y] != 1)
+                    {
+                        player.snake[x, y]++;
+                    }
+                    else if (player.snake[x, y] == 1 && !headMoved)
+                    {
+                        headMoved = true;
+                        player.snake[x, y]++;
+                        switch (lastInput)
+                        {
+                            case ConsoleKey.W:
+                                player.y -= 1;
+                                break;
+                            case ConsoleKey.A:
+                                player.x -= 1;
+                                break;
+                            case ConsoleKey.S:
+                                player.y += 1;
+                                break;
+                            case ConsoleKey.D:
+                                player.x += 1;
+                                break;
+                        }
+                        player.snake[player.x, player.y] = 1;
+                    }
+                }
+            }
+        }
+
+        static void Render(Board board, Apple apple, Player player)
+        {
+            RenderBoard(board);
+            RenderApple(board, apple);
+            RenderSnake(board, player);
+        }
+
+        static void RenderBoard(Board board)
+        {
+            Console.CursorLeft = 0;
+            Console.CursorTop = 0;
+            for (int y = 0; y < board.height; y++)
+            {
+                for (int x = 0; x < board.width; x++)
+                {
+                    if (x % 2 == 0 && y % 2 == 0)
                     {
                         Console.BackgroundColor = ConsoleColor.Green;
                     }
@@ -252,11 +300,7 @@
                 Console.WriteLine();
                 for (int x = 0; x < board.width; x++)
                 {
-                    if (player.x == x && player.y == y)
-                    {
-                        Console.BackgroundColor = ConsoleColor.Blue;
-                    }
-                    else if (x % 2 == 0 && y % 2 == 0)
+                    if (x % 2 == 0 && y % 2 == 0)
                     {
                         Console.BackgroundColor = ConsoleColor.Green;
                     }
@@ -271,6 +315,50 @@
                     Console.Write("    ");
                 }
                 Console.WriteLine();
+            }
+            Console.BackgroundColor = ConsoleColor.Black;
+        }
+
+        static void RenderApple(Board board, Apple apple)
+        {
+            for (int y = 0; y < board.height; y++)
+            {
+                for (int x = 0; x < board.width; x++)
+                {
+                    if (apple.apples[x, y] == true)
+                    {
+                        Console.CursorLeft = x * 4;
+                        Console.CursorTop = y * 2;
+                        Console.BackgroundColor = ConsoleColor.Red;
+                        Console.Write("    ");
+                        Console.CursorLeft = x * 4;
+                        Console.CursorTop = y * 2 + 1;
+                        Console.BackgroundColor = ConsoleColor.Red;
+                        Console.Write("    ");
+                    }
+                }
+            }
+            Console.BackgroundColor = ConsoleColor.Black;
+        }
+
+        static void RenderSnake(Board board, Player player)
+        {
+            for (int y = 0; y < board.height; y++)
+            {
+                for (int x = 0; x < board.width; x++)
+                {
+                    if (player.snake[x, y] != 0)
+                    {
+                        Console.CursorLeft = x * 4;
+                        Console.CursorTop = y * 2;
+                        Console.BackgroundColor = ConsoleColor.Blue;
+                        Console.Write("    ");
+                        Console.CursorLeft = x * 4;
+                        Console.CursorTop = y * 2 + 1;
+                        Console.BackgroundColor = ConsoleColor.Blue;
+                        Console.Write("    ");
+                    }
+                }         
             }
             Console.BackgroundColor = ConsoleColor.Black;
         }
