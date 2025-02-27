@@ -26,7 +26,10 @@
                 y = board.height / 2;
                 length = 1;
                 snake = new int[board.width, board.height];
-                snake[x, y] = 1;
+                for (int i = 0; i > 3; i++)
+                {
+                    snake[x - i, y] = i + 1; 
+                }
             }
         }
         struct Apple
@@ -42,12 +45,6 @@
                 x = new int[count];
                 y = new int[count];
                 apples = new bool[board.width, board.height];
-                for (int i = 0; i < count; i++)
-                {
-                    x[i] = r.Next(0, board.width);
-                    x[i] = r.Next(0, board.height);
-                    apples[x[i], y[i]] = true;
-                }
             }
         }
         static void Main()
@@ -62,6 +59,7 @@
 
             Board board = new Board(10, 9);
             Player player = new Player(board);
+            Apple apple = new Apple(3, board);
 
             Console.WriteLine("Enter to start...");
             lastInput = Console.ReadKey().Key;
@@ -82,7 +80,7 @@
             inputThread.Start();
             GameLoop(board, player, ref lastInput, ref extraInput);
         }
-        static void GameLoop(Board board, Player player, ref ConsoleKey lastInput, ref ConsoleKey extraInput)
+        static void GameLoop(Board board, Player player, Apple apple, ref ConsoleKey lastInput, ref ConsoleKey extraInput)
         {
             bool gameOver = false;
             bool gameWon = false;
@@ -188,7 +186,26 @@
             Environment.Exit(0);
         }
 
-        static void OnApple(Board board, ref Apple apple, ref Player player)
+        static void GenerateApple(Player player, Board board, ref Apple apple)
+        {
+            Random r = new();
+            bool done = false;
+            int x, y;
+
+            while (!done)
+            {
+                x = r.Next(0, board.width);
+                y = r.Next(0, board.height);
+
+                if (player.snake[x, y] == 0)
+                {
+                    apple.apples[x, y] = true;
+                    done = true;
+                }
+            }
+        }
+
+        static bool OnApple(Board board, ref Apple apple, ref Player player)
         {
             Random r = new();
             int x, y;
@@ -199,9 +216,12 @@
                 apple.apples[player.x, player.y] = false;
 
                 x = r.Next(0, board.width);
-                x = r.Next(0, board.height);
+                y = r.Next(0, board.height);
                 apple.apples[x, y] = true;
+
+                return true;
             }
+            return false;
         }
 
         static void Render(Board board, Player player)
