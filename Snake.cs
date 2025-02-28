@@ -64,9 +64,10 @@ namespace SnakeRedux
                 lastInput = Console.ReadKey(true).Key;
             }
             lastInput = ConsoleKey.D;
+            extraInput = ConsoleKey.None;
             Thread inputThread = new Thread(delegate ()
             {
-                InputLoop(ref lastInput, ref extraInput);
+                InputLoop(player, ref lastInput, ref extraInput);
             });
             inputThread.Start();
 
@@ -79,14 +80,15 @@ namespace SnakeRedux
                 Console.WriteLine();
             }*/
             GenerateApple(player, board, ref apple);
-            GameLoop(board, player, apple, ref lastInput, ref extraInput);
+            GameLoop(board, apple, ref player, ref lastInput, ref extraInput);
         }
-        static void GameLoop(Board board, Player player, Apple apple, ref ConsoleKey lastInput, ref ConsoleKey extraInput)
+        static void GameLoop(Board board, Apple apple, ref Player player, ref ConsoleKey lastInput, ref ConsoleKey extraInput)
         {
             bool gameOver = false;
             bool gameWon = false;
             while (true)
             {
+                Thread.Sleep(500);
                 if (player.x > board.width || player.x < 0 || player.y > board.height || player.y < 0)
                 {
                     gameOver = true;
@@ -112,30 +114,31 @@ namespace SnakeRedux
                 if (OnApple(board, ref apple, ref player))
                 {
                     CutTail(board, ref player);
-                    MoveSnake(board, lastInput, ref player);
+                    MoveSnake(board, lastInput, ref player, ref gameOver);
                     GenerateApple(player, board, ref apple);
                 }
                 else
                 {
                     CutTail(board, ref player);
-                    MoveSnake(board, lastInput, ref player);
+                    MoveSnake(board, lastInput, ref player, ref gameOver);
                 }
 
                 if (gameOver)
                 {
+                    lastInput = ConsoleKey.None;
                     Console.Clear();
                     Console.WriteLine("You lose!");
                     Console.WriteLine("Press any key to restart...");
                     Console.WriteLine("Press Escape to exit...");
-                    switch (lastInput)
+
+                    if (lastInput == ConsoleKey.Escape)
                     {
-                        case ConsoleKey.Escape:
-                            EndGame();
-                            break;
-                        default:
-                            RestartGame(board, ref player, ref lastInput);
-                            gameOver = false;
-                            break;
+                        EndGame();
+                    }
+                    else if (lastInput != ConsoleKey.None)
+                    {
+                        RestartGame(board, ref player, ref lastInput);
+                        gameOver = false;
                     }
                 }
                 if (gameWon)
@@ -155,16 +158,19 @@ namespace SnakeRedux
                             break;
                     }
                 }
-                Thread.Sleep(500);
             }
         }
-        static void InputLoop(ref ConsoleKey lastInput, ref ConsoleKey extraInput)
+        static void InputLoop(Player player, ref ConsoleKey lastInput, ref ConsoleKey extraInput)
         {
             ConsoleKey input;
             while (true)
             {
                 input = Console.ReadKey(true).Key;
-                if (input == ConsoleKey.W || input == ConsoleKey.A || input == ConsoleKey.S || input == ConsoleKey.D)
+                if (
+                    input == ConsoleKey.W || 
+                    input == ConsoleKey.A || 
+                    input == ConsoleKey.S || 
+                    input == ConsoleKey.D)
                 {
                     lastInput = input;
                 }
@@ -231,7 +237,7 @@ namespace SnakeRedux
             }
         }
 
-        static void MoveSnake(Board board, ConsoleKey lastInput, ref Player player)
+        static void MoveSnake(Board board, ConsoleKey lastInput, ref Player player, ref bool gameOver)
         {
             bool headMoved = false;
 
@@ -250,16 +256,44 @@ namespace SnakeRedux
                         switch (lastInput)
                         {
                             case ConsoleKey.W:
-                                player.y -= 1;
+                                if (player.y - 1 == -1 || player.snake[player.x, player.y - 1] != 0) 
+                                { 
+                                    gameOver = true; 
+                                }
+                                else 
+                                {
+                                    player.y -= 1;
+                                }
                                 break;
                             case ConsoleKey.A:
-                                player.x -= 1;
+                                if (player.x - 1 == -1 || player.snake[player.x - 1, player.y] != 0) 
+                                { 
+                                    gameOver = true; 
+                                }
+                                else
+                                {
+                                    player.x -= 1;
+                                }
                                 break;
                             case ConsoleKey.S:
-                                player.y += 1;
+                                if (player.y + 1 == board.height || player.snake[player.x, player.y + 1] != 0) 
+                                { 
+                                    gameOver = true; 
+                                }
+                                else
+                                {
+                                    player.y += 1;
+                                }
                                 break;
                             case ConsoleKey.D:
-                                player.x += 1;
+                                if (player.x + 1 == board.width || player.snake[player.x + 1, player.y] != 0) 
+                                { 
+                                    gameOver = true; 
+                                }
+                                else
+                                {
+                                    player.x += 1;
+                                }
                                 break;
                         }
                         player.snake[player.x, player.y] = 1;
